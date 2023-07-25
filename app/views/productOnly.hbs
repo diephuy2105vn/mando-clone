@@ -1,0 +1,281 @@
+<main class="page__productOnly">
+    <div class="wrapper">
+        <div class="slider">
+            <div class="action">
+                {{#each product.imagePath}}
+                    <button index="{{sum @index 1}}">
+                        <img src="../{{this}}" alt="" draggable="false">
+                    </button>
+                {{/each}}
+            </div>
+            <div class="content">
+                {{#each product.imagePath}}
+                    <div class="card">
+                        <div><img src="../{{this}}" alt=""  draggable="false"></div>
+                    </div>
+                {{/each}}   
+            </div>
+        </div>
+        
+        <div class="infor">
+            <h2 class="name">{{product.name}}</h2>
+            <div class="price">
+                <p>{{product.price}} đ</p>
+            </div>   
+            <div class="color">
+                <p>Màu sắc:
+                    {{#each product.colors}}
+                        <button class="button__color">{{this}}</button> 
+                    {{/each}}
+                </p>   
+             </div>
+            <div class="size">
+                <p>Kích thước:
+                    {{#each product.sizes}}
+                        <button class="button__size">{{this}}</button> 
+                    {{/each}}
+                </p>
+            </div>
+            <div class="quantity">
+                <button onclick="decreaseValue()">-</button>
+                <input type="text" id="productNumber" oninput="validateInput()" value="1">
+                <button onclick="increaseValue()">+</button>
+            </div>
+            <div class="action">
+                <button class="button_buyProductOnly" data-id="{{product._id}}">Mua hàng</button>
+                <button  class="button_addToCart" data-id="{{product._id}}">Thêm vào giỏ </button>
+            </div>
+         </div>
+    </div>
+</main>
+<script>
+    const slider = document.querySelector('.slider')
+    const sliderContent = slider.querySelector('.content');
+    const cardWidth = sliderContent.querySelector('.card').offsetWidth
+    const sliderAction = slider.querySelector('.action')
+    const buttonImages = [...sliderAction.querySelectorAll('button')]
+    const sliderChildrens = [...sliderContent.children]
+    let isDragging = false, startScollLeft, startX
+    let cardPerView = Math.round(sliderContent.offsetWidth / cardWidth)
+
+    sliderChildrens.slice(-cardPerView).reverse().forEach(card => {
+        sliderContent.insertAdjacentHTML("afterbegin", card.outerHTML)
+    })
+
+    sliderChildrens.slice(0, cardPerView).forEach(card => {
+        sliderContent.insertAdjacentHTML("beforeEnd", card.outerHTML)
+    })
+
+    const handleMouseDown = (e) => {
+        isDragging = true
+        startX = e.pageX
+        startScollLeft = sliderContent.scrollLeft
+        sliderContent.classList.add('dragging')
+    }
+
+    const handleMouseUp = () => {
+        isDragging = false
+        sliderContent.classList.remove('dragging')
+    }
+    const handleMouseMove = (e) => {
+        if(!isDragging) return 
+        sliderContent.scrollLeft = startScollLeft - ( e.pageX- startX);
+    }
+
+    const handleScroll = () => {
+        if(sliderContent.scrollLeft === 0) {
+            sliderContent.classList.add('no-transition')
+            sliderContent.scrollLeft = sliderContent.scrollWidth - (2 * sliderContent.offsetWidth)
+            sliderContent.classList.remove('no-transition')
+        }
+
+        if(Math.ceil(sliderContent.scrollLeft) >= sliderContent.scrollWidth - sliderContent.offsetWidth) {
+            sliderContent.classList.add('no-transition')
+            sliderContent.scrollLeft = sliderContent.offsetWidth
+            sliderContent.classList.remove('no-transition')
+        }
+        handleActiveButton()
+    }
+    let currentButtonImage = null
+    buttonImages.forEach((button) => {
+        button.onclick = () => { 
+            sliderContent.scrollLeft = button.attributes.index.value * cardWidth
+            handleActiveButton()
+        }
+    })
+
+    const handleActiveButton = () => {
+        buttonImages.forEach(button => {
+            if(Math.abs(sliderContent.scrollLeft / cardWidth - button.attributes.index.value) <= 0.1) {
+                if(currentButtonImage!=null) {
+                    currentButtonImage.classList.remove('active')
+                }
+                button.classList.add('active')
+                currentButtonImage = button 
+            }
+        })
+    }
+
+    const autoScroll = () => {
+        intervalId = setInterval(() => {
+            sliderContent.scrollLeft += cardWidth
+            handleActiveButton()
+        }, 3000)
+    }
+
+
+    autoScroll()
+    sliderContent.addEventListener('mousedown', handleMouseDown)
+    sliderContent.addEventListener('mousemove', handleMouseMove)
+    sliderContent.addEventListener('mouseup', handleMouseUp)
+    sliderContent.addEventListener('scroll', handleScroll)
+    slider.addEventListener('mouseenter', () => clearInterval(intervalId))
+    slider.addEventListener('mouseleave', autoScroll)
+
+
+    //Handle Product Size 
+    const buttonSize = [...document.querySelectorAll('.button__size')]
+    let currentButtonSize = null
+    buttonSize.forEach(button => {
+        button.onclick = () => {
+            if(currentButtonSize) currentButtonSize.classList.remove('active')
+            button.classList.add('active')
+            currentButtonSize = button
+        }
+    })
+    //Handle Product Color
+    const buttonColor = [...document.querySelectorAll('.button__color')]
+    let currentButtonColor = null
+    buttonColor.forEach(button => {
+        button.onclick = () => {
+            if(currentButtonColor) currentButtonColor.classList.remove('active')
+            button.classList.add('active')
+            currentButtonColor = button
+        }
+    })
+
+
+    //Handle Product Quantity
+    let currentValue = document.getElementById('productNumber').value;
+
+    function increaseValue() {
+        let value = parseInt(document.getElementById('productNumber').value, 10);
+        value = isNaN(value) ? 0 : value;
+        if (value < 99) {
+            value++;
+            currentValue = value;
+            document.getElementById('productNumber').value = value;
+        }
+    }
+
+    function decreaseValue() {
+        let value = parseInt(document.getElementById('productNumber').value, 10);
+        value = isNaN(value) ? 0 : value;
+        if (value > 1) {
+        value--;
+        currentValue = value;
+        document.getElementById('productNumber').value = value;
+        }
+    }
+
+    function validateInput() {
+        let value = document.getElementById('productNumber').value;
+        if (isNaN(value) || value < 1 || value > 100) {
+            document.getElementById('productNumber').value = currentValue;
+        } else {
+            currentValue = value;
+        }
+    }
+
+    //Get Button Add Cart
+    const buttonAddToCart = document.querySelector('.button_addToCart')
+    
+    //Get Button Buy Product
+    const buttonBuyProduct = document.querySelector('.button_buyProductOnly')
+
+    function processCart(cart, idProduct, user) {
+        let isNewDetail = true
+        cart.forEach(detail => {
+            if(detail.idProduct == idProduct 
+            && detail.size == currentButtonSize.innerText 
+            && detail.color == currentButtonColor.innerText) {
+                isNewDetail = false
+                detail.quantity = Number(detail.quantity) + Number(currentValue);
+                if(user) {
+                    fetch(`/cart/${detail._id}`, {
+                        method: "PATCH", 
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                            body: JSON.stringify(detail)
+                    })
+                }
+           }
+        })
+        if(isNewDetail) {    
+            const detail = user? {idUser: user._id} : {_id: cart.length+1}
+            detail.idProduct = idProduct
+            detail.size = currentButtonSize.innerText
+            detail.color = currentButtonColor.innerText 
+            detail.quantity = currentValue
+            cart.push(detail);
+            if(user) {
+                fetch('/cart/create', { method: "POST", 
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(detail)
+                })
+            }
+        }
+        if(!user) localStorage.setItem('Cart', JSON.stringify(cart))
+    }
+
+    //Handle button add to cart click
+    buttonAddToCart.addEventListener('click', (e) => {
+        e.stopPropagation()
+        if(currentButtonColor && currentButtonSize){
+            {{#if user}}
+                const user = {{{JSONstringify user}}};
+            {{else}}
+                const user = null;
+            {{/if}}
+            let cart = []
+            if(user) {
+                fetch(`/api/cart/${user._id}`, {
+                    headers: {
+                        'X-Fetch': 'true'
+                    }
+                }) 
+                    .then(res => res.json())
+                    .then(cart => {
+                        const idProduct = e.target.dataset.id
+                        processCart(cart, idProduct, user)
+                        handleToggleCart()  
+                    })
+                return
+            }
+            const data = localStorage.getItem("Cart")
+            if(data) {
+                cart = JSON.parse(data)
+            }
+            const idProduct = e.target.dataset.id
+            processCart(cart, idProduct)
+            handleToggleCart()
+        }
+    })
+
+    //When button but product click
+    buttonBuyProduct.addEventListener('click', (e) => {
+        if(currentButtonColor && currentButtonSize) {
+            const detail = [{
+                idProduct: e.target.dataset.id,
+                size: currentButtonSize.innerText,
+                color: currentButtonColor.innerText ,
+                quantity: currentValue,
+            }]
+            localStorage.setItem('Order', JSON.stringify(detail))
+            window.location.pathname = "/payment"
+        }
+    })
+</script>

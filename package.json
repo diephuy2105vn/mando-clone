@@ -1,0 +1,29 @@
+{
+	"name": "mando-clone",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"start": "nodemon ./bin/www",
+		"scss": "sass --watch app/scss/main.scss public/stylesheets/style.css"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/diephuy2105vn/mando-clone.git"
+	},
+	"dependencies": {
+		"@fortawesome/fontawesome-free": "^6.4.0",
+		"bcrypt": "^5.1.0",
+		"cookie-parser": "~1.4.4",
+		"debug": "~2.6.9",
+		"express": "^4.18.2",
+		"express-handlebars": "^7.0.7",
+		"hbs": "^4.2.0",
+		"http-errors": "~1.6.3",
+		"jsonwebtoken": "^9.0.1",
+		"mongoose": "^6.10.0",
+		"morgan": "~1.9.1",
+		"multer": "^1.4.5-lts.1",
+		"nodemon": "^2.0.22",
+		"sass": "^1.63.6"
+	}
+}

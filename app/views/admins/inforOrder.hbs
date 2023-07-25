@@ -1,0 +1,85 @@
+<div class="page__inforOrder">
+	<form class="inforOrder__form">
+		<div class="infor">
+			<h2 class="title">Thông tin giao hàng</h2>
+			<div class="wrapper__input">
+				<input name="name" type="text" value="{{order.name}}" required />
+			</div>
+			<div class="wrapper__input">
+				<input name="email" type="email" value="{{order.email}}" required />
+				<input name="phone" type="number" value="{{order.phone}}" required />
+			</div>
+			<div class="wrapper__input">
+				<input name="address" type="text" value="{{order.address}}" required />
+			</div>
+		</div>
+		<div class="method">
+			<h2 class="title">Phương thức thanh toán</h2>
+			<div class="wrapper__input">
+				<input name="paymentMethod" type="text" value="{{order.paymentMethod}}" />
+			</div>
+		</div>
+		<div class="action">
+			<button type="submit" class="button__confirm">Xác nhận đơn hàng</button>
+			<button class="button__save">Lưu đơn hàng</button>
+			<button class="button__edit">Chỉnh sửa</button>
+		</div>
+	</form>
+	<div class="inforOrder__cart">
+		<h1 class="title">Giỏ hàng</h1>
+		<div class="content">
+			{{#each cart}}
+				<div class="card">
+					<div class="thumbnail">
+						<img src="../../{{getElementArray this.product.imagePath 0}}" alt="" />
+					</div>
+					<div class="infor">
+						<h3>{{this.product.name}}</h3>
+						<div class="detail">
+							<span>{{this.color}}/{{this.size}}</span>
+						</div>
+						<div>
+							<span class="quantity">
+								{{this.quantity}}
+							</span>
+							<span class="price">
+								{{this.product.price}}
+							</span>
+						</div>
+					</div>
+				</div>
+			{{/each}}
+		</div>
+		<div class="cart__footer">
+			<span id="total-price-order">Tổng tiền: {{order.total}} đ</span>
+		</div>
+	</div>
+	<div id="confirm-dialog">
+		<div class="dialog-content">
+			<h2>Thông báo</h2>
+			<p></p>
+			<button id="confirm" class="button-primary">Xác nhận</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	const path = location.pathname; const pathArray = path.split("/"); const idOrder = pathArray[pathArray.length - 1];
+	const inforOrderForm = document.querySelector('.inforOrder__form') const buttonConfirm =
+	inforOrderForm.querySelector('.button__confirm') const buttonEdit = inforOrderForm.querySelector('.button__edit')
+	const buttonSave = inforOrderForm.querySelector('.button__save') buttonConfirm.addEventListener('click', (e) => {
+	e.preventDefault() const confirmDialog = document.getElementById("confirm-dialog") const spanDialog =
+	confirmDialog.querySelector("p") const buttonDialog = confirmDialog.querySelector("button")
+	console.log(buttonDialog) fetch(`/order/confirm/${idOrder}`, { method: 'POST', }) .then(res => res.json())
+	.then(data => { if(data.status == 'Success') { confirmDialog.style.display = "flex" spanDialog.innerText =
+	data.element buttonDialog.onclick = () => { window.location.pathname = "/admin/order/store" } return }
+	confirmDialog.style.display = "flex" spanDialog.innerText = data.element buttonDialog.onclick = () => {
+	confirmDialog.style.display = "none" } }) .catch(error => { confirmDialog.style.display = "flex"
+	spanDialog.innerText = "Đã có lỗi xảy ra" buttonDialog.onclick = () => { confirmDialog.style.display = "none" } })
+	}) buttonEdit.addEventListener('click', (e) => { e.preventDefault() inforOrderForm.classList.add('edit') })
+	buttonSave.addEventListener('click', (e) => { e.preventDefault() const inputElements =
+	[...document.querySelectorAll('input[name]')] const data = {} inputElements.forEach(input => { data[input.name] =
+	input.value }) fetch(`/order/update/${idOrder}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+	body: JSON.stringify(data) }) .then(res => res.json()) .then(data => { if(data.status == 'Success') {
+	inforOrderForm.classList.remove('edit') return } throw error }) .catch(error => { alert('Đã có lỗi xảy ra') }) })
+</script>

@@ -1,0 +1,118 @@
+<div id="form__createProduct">
+    <h2>Create Product</h2>
+    <table>
+        <tr>
+            <td colspan="3"><span>Tên sản phẩm:</span><input name="name" type="text" placeholder="Nhập tên sản phẩm ..."></td>
+            <td colspan="2"><span>Giá sản phẩm</span><input name="price" type="number"  placeholder="Nhập giá sản phẩm ..."></td>
+        </tr>
+        <tr>
+            <td colspan="5"><span>Mô tả</span><textarea name="description" rows="3"  placeholder="Nhập mô tả sản phẩm ..."></textarea></td>
+        </tr>
+        <tr>
+             <td colspan="5">
+                <span>Kích thước:</span>
+                <input type="checkbox" name="sizes" value="S"> Size S
+                <input type="checkbox" name="sizes" value="M"> Size M
+                <input type="checkbox" name="sizes" value="L"> Size L
+                <input type="checkbox" name="sizes" value="XL"> Size XL
+            </td>
+        </tr>
+        <tr>
+            <td colspan="5">
+                <span>Màu sản phẩm:</span>
+                <input type="checkbox" name="colors" value="Đen"> Đen
+                <input type="checkbox" name="colors" value="Trắng"> Trắng
+                <input type="checkbox" name="colors" value="Đỏ"> Đỏ
+                <input type="checkbox" name="colors" value="Vàng"> Vàng
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <span>Loại sản phẩm:</span>
+                <select name="type">
+                    <option selected disabled>--Chọn loại sản phẩm--</option>
+                    <option value="T-Shirt">Shirt</option>
+                    <option value="Shirt">T-Shirt</option>
+                    <option value="Polo">Polo</option>
+                    <option value="Blazer">Blazer</option>
+                    <option value="Quần dài">Áo khoác</option>
+                    <option value="Quần dài">Quần jean</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3"><span>Chọn ảnh:</span><input type="file" id="image-input" name="images" multiple></td>
+        </tr>
+        <tr id="preview"></tr>
+    </table>
+    <button id="#button-submit" class="button-primary">Create</button>
+    <button class="button-cancel">Cancel</button>
+</div>
+
+<script>
+    const buttonCanCel = document.querySelector('.button-cancel')
+    buttonCanCel.onclick = (e) => {
+        e.preventDefault()
+        window.location.pathname= '/admin/product/store'
+    }
+
+    const input = document.querySelector('#image-input');
+    const preview = document.querySelector('#preview');
+
+    let images;
+    input.addEventListener('change', () => {
+        images = []
+        preview.innerHTML = '';
+        const files = [...input.files]; 
+        files.forEach (file => {
+            const reader = new FileReader();
+            console.log(images)
+            reader.onload = (e) => {
+                const base64Image = e.target.result;
+                images.push(base64Image);
+                const divImage = `<div class="image">
+                                <img src="${e.target.result}">
+                            </div>`
+                preview.innerHTML += divImage;
+            };
+            reader.readAsDataURL(file);
+        })
+    });
+    const buttonSubmit = document.getElementById('#button-submit')
+    buttonSubmit.onclick = () => {
+        let isSubmit = true;
+        let notChecked = false;
+        const data = {}
+        const table = document.querySelector('table');
+        const inputs = table.querySelectorAll('input[name]:not([type=checkbox]), textarea[name], select[name]');
+        const sizesCheckboxs = [...table.querySelectorAll('input[name="sizes"]:checked')]
+        const colorsCheckboxes = [...table.querySelectorAll('input[name="colors"]:checked')];
+        
+        inputs.forEach(input => {
+            if(!input.value) {
+                isSubmit = false
+                return
+            }
+            data[input.name] = input.value;
+        });
+       
+        const selectedColors = colorsCheckboxes.map(checkbox => checkbox.value);
+        const selectedSizes = sizesCheckboxs.map(checkbox => checkbox.value)
+        
+        if(isSubmit && images && selectedSizes && selectedColors) {
+            data.sizes = selectedSizes
+            data.colors = selectedColors
+            data.images = images
+            fetch('/product/create', { method: 'POST',headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)})
+            inputs.forEach(input => {
+                input.value = '';
+            });
+            colorsCheckboxes.forEach(checkbox => {checkbox.checked = false})
+            sizesCheckboxs.forEach(checkbox => {checkbox.checked = false})
+            preview.innerHTML = ""
+        }
+    }
+</script>

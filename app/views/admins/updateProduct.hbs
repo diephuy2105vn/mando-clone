@@ -1,0 +1,123 @@
+<div id="form__updateProduct">
+    <h2>Update Product</h2>
+    <table>
+        <tr>
+            <td colspan="3"><span>Tên sản phẩm:</span><input name="name" type="text" value="{{product.name}}" placeholder="Nhập tên sản phẩm ..."></td>
+            <td colspan="2"><span>Giá sản phẩm</span><input name="price" type="number" value="{{product.price}}" placeholder="Nhập giá sản phẩm ..."></td>
+        </tr>
+        <tr>
+            <td colspan="5"><span>Mô tả</span><textarea name="description" rows="3"  placeholder="Nhập mô tả sản phẩm ...">{{product.description}}</textarea></td>
+        </tr>
+        <tr>
+             <td colspan="5">
+                <span>Kích thước:</span>
+                <input type="checkbox" name="sizes" value="S" {{#if (includes product.sizes "S")}}checked{{/if}}> Size S
+                <input type="checkbox" name="sizes" value="M" {{#if (includes product.sizes "M")}}checked{{/if}}> Size M
+                <input type="checkbox" name="sizes" value="L" {{#if (includes product.sizes "L")}}checked{{/if}}>Size L
+                <input type="checkbox" name="sizes" value="XL" {{#if (includes product.sizes "XL")}}checked{{/if}}> Size XL
+            </td>
+        </tr>
+        <tr>
+            <td colspan="5">
+                <span>Màu sản phẩm:</span>
+                <input type="checkbox" name="colors" value="Đen" {{#if (includes product.colors "Đen")}}checked{{/if}}> Đen
+                <input type="checkbox" name="colors" value="Trắng" {{#if (includes product.colors "Trắng")}}checked{{/if}}> Trắng
+                <input type="checkbox" name="colors" value="Đỏ" {{#if (includes product.colors "Đỏ")}}checked{{/if}}> Đỏ
+                <input type="checkbox" name="colors" value="Vàng" {{#if (includes product.colors "Vàng")}}checked{{/if}}> Vàng
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <span>Loại sản phẩm:</span>
+                <select name="type">
+                    <option disabled>--Chọn loại sản phẩm--</option>
+                    <option value="Shirt" {{#if (equals product.type "Shirt")}}selected{{/if}}>Shirt</option>
+                    <option value="T-Shirt" {{#if (equals product.type "T-Shirt")}}selected{{/if}}>T-Shirt</option>
+                    <option value="Polo" {{#if (equals product.type "Polo")}}selected{{/if}}>Polo</option>
+                    <option value="Blazer" {{#if (equals product.type "Blazer")}}selected{{/if}}>Blazer</option>
+                    <option value="Áo khoác" {{#if (equals product.type "Áo khoác")}}selected{{/if}}>Áo khoác</option>
+                    <option value="Quần jean" {{#if (equals product.type "Quần jean")}}selected{{/if}}>Quần jean</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3"><span>Chọn ảnh:</span><input type="file" id="image-input" name="images" multiple></td>
+        </tr>
+        <tr id="preview">
+             {{#each product.imagePath}}
+            <td>
+                <div class="image"><img src="../../{{this}}"></div>
+            </td>
+            {{/each}}
+        </tr>
+    </table>
+    <button id="#button-submit" class="button-primary">Update</button>
+    <button class="button-cancel">Cancel</button>
+</div>
+
+<script>
+    const buttonCanCel = document.querySelector('.button-cancel')
+    buttonCanCel.onclick = (e) => {
+        e.preventDefault()
+        window.location.pathname= '/admin/product/store'
+    }
+
+    const input = document.querySelector('#image-input');
+    const preview = document.querySelector('#preview');
+
+    let images;
+    input.addEventListener('change', () => {
+        images = []
+        preview.innerHTML = '';
+        const files = [...input.files]; 
+        files.forEach (file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64Image = e.target.result;
+                images.push(base64Image);
+                const divImage = `<div class="image">
+                                <img src="${e.target.result}">
+                            </div>`
+                preview.innerHTML += divImage;
+            };
+            reader.readAsDataURL(file);
+        })
+    });
+    const buttonSubmit = document.getElementById('#button-submit')
+    buttonSubmit.onclick = () => {
+        let isSubmit = true;
+        let notChecked = false;
+        const data = {}
+        const table = document.querySelector('table');
+        const inputs = table.querySelectorAll('input[name]:not([type=checkbox]):not([type=file]), textarea[name], select[name]');
+        const sizesCheckboxs = [...table.querySelectorAll('input[name="sizes"]:checked')]
+        const colorsCheckboxes = [...table.querySelectorAll('input[name="colors"]:checked')];
+        
+        inputs.forEach(input => {
+            if(!input.value) {
+                isSubmit = false
+                return
+            }
+            data[input.name] = input.value;
+        });
+       
+        const selectedColors = colorsCheckboxes.map(checkbox => checkbox.value);
+        const selectedSizes = sizesCheckboxs.map(checkbox => checkbox.value)
+        
+        if(isSubmit && selectedSizes && selectedColors) {
+            data.sizes = selectedSizes
+            data.colors = selectedColors
+            if(images) data.images = images
+            const path = location.pathname;
+            const pathArray = path.split("/");
+            const lastPath = pathArray[pathArray.length - 1];
+            fetch(`/product/update/${lastPath}`, { method: 'PATCH',headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)})
+                .then(res => {
+                    window.location.pathname = "/admin/product/store"
+                })
+        }
+    }
+</script>

@@ -1,0 +1,77 @@
+<div id="page__storeProduct">
+    <table>
+        <tr>
+            <th>STT</th>
+            <th>Tên</th>
+            <th>Giá</th>
+            <th>Màu sắc</th>
+            <th>Size</th>
+            <th>Điều chỉnh</th>
+        </tr>
+    </table>
+    <div class="page__store--link"><a href="/admin/product/create">Thêm sản phẩm</button></a></div>
+    <div id="confirm-dialog">
+        <div class="dialog-content">
+            <h2>Xóa sản phẩm</h2>
+            <p>Hành động của bạn không thể khôi phục, bạn chắc chắn muốn xóa sản phẩm này?</p>
+            <button id="confirm-no" class="button-cancel">Không</button>
+            <button id="confirm-yes" class="button-primary">Có</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const query = window.location.search
+    fetch(`/api/product${query}`)
+        .then(response => response.json())
+        .then(data => {
+            const page = document.getElementById('page__storeProduct')
+            const table = page.querySelector('table');
+            const rows = data.map((product, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${product.name}</td>
+                    <td>${product.price}</td>
+                    <td>${product.colors.join(', ')}</td>
+                    <td>${product.sizes.join(', ')}</td>
+                    <td>
+                    <a href="/admin/product/${product._id}">Chi tiết</a>
+                    <button data-id="${product._id}">Xóa</button>
+                    </td>
+                </tr>
+            `).join('');
+            table.innerHTML += rows;
+            
+            const deleteButtons = [...page.querySelectorAll('button[data-id]')];
+            const dialog = page.querySelector('#confirm-dialog');
+            const confirmYes = page.querySelector('#confirm-yes');
+            const confirmNo = page.querySelector('#confirm-no');
+                
+            // Lặp qua các nút xóa và gán hàm xử lý
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.dataset.id;
+                    dialog.style.display = 'flex';
+                    confirmYes.onclick = function() {
+                        fetch(`/product/delete/${productId}`, {
+                            method: 'DELETE'
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                button.parentElement.parentElement.remove();
+                                dialog.style.display = 'none';
+                            })
+                            .catch(error => {
+                                alert("Xóa không thành công")
+                            });
+                        };
+                        // Gán hàm xử lý khi nhấn nút không
+                    confirmNo.onclick = function() {
+                        // Ẩn hộp thoại xác nhận
+                        dialog.style.display = 'none';
+                    };
+                });
+            }
+        );
+    }) 
+</script>

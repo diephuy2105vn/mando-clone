@@ -1,0 +1,160 @@
+<div id="modal-cart">
+    <div class="wrapper">
+        <div class="cart__header">
+            <h1>Giỏ hàng</h1>
+            <button id="close-cart"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div class="content">
+        </div>
+        <div class="cart__footer">
+             <span id="total-price">Tổng tiền: </span>
+            <button id="button_buyAll">Thanh Toán</button>
+        </div>
+    </div>
+</div>
+<script>
+    let isOpenModalCart = false
+    const buttonOpenCart = document.getElementById('open-cart')
+    const modalCart = document.getElementById('modal-cart')
+    const modalCartWrapper = modalCart.querySelector('.wrapper')
+    const modalCartContent = modalCart.querySelector('.content')
+    const modalCartPrice = modalCart.querySelector('#total-price')
+    const buttonCloseCart = modalCart.querySelector('#close-cart')
+    const buttonBuyAll = modalCart.querySelector('#button_buyAll')
+    function createCardInCart(product, detail) {
+        return `<div class="card">
+                <div class="thumbnail">
+                    <img src="../${product.imagePath[0]}" alt="">
+                </div>
+                <div class="infor">
+                    <a href="/product/${product._id}">${product.name}</a>
+                    <div class="detail">
+                        <span>${detail.color}/${detail.size}</span>
+                    </div>
+                    <div>
+                        <span class="quantity">
+                            ${detail.quantity}
+                        </span>
+                        <span class="price">
+                            ${product.price}
+                        </span>
+                    </div>
+                </div>
+                <div class="delete__card">
+                    <button class="button__delete" data-id="${detail._id}"><i class="fa-solid fa-x"></i></button>
+                </div>
+            </div>`
+    }
+
+    function handleCart (cart, user) {
+        Promise.all(cart.map(detail => 
+            fetch(`/api/product/${detail.idProduct}`, { 
+                headers: {
+                    'X-Fetch': 'true'
+                }
+            })
+                .then(res => res.json())
+                .then(product => ({detail, product}))
+            ))  
+            .then(results => {
+                let totalPrice = 0
+                modalCartContent.innerHTML = results.map(({detail, product}) => {
+                    if(product) {
+                        totalPrice += detail.quantity * product.price 
+                        return createCardInCart(product, detail);
+                    }
+                }).join('');
+                const buttonDeleteCards = [...modalCart.querySelectorAll('.button__delete')];
+                buttonDeleteCards.forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation()
+                        const card = button.parentElement.parentElement
+                        totalPrice -= (card.querySelector('.quantity').innerText) * (card.querySelector('.price').innerText)
+                        card.remove()
+                        modalCartPrice.innerText = `Tổng tiền: ${totalPrice} đ`
+                        cart = cart.filter(detail => detail._id != button.dataset.id);
+                        if(user) {
+                            fetch(`/cart/${button.dataset.id}`, {method: 'DELETE'})
+                            return
+                        }
+                        localStorage.setItem('Cart', JSON.stringify(cart))
+                    });
+                });
+                modalCartPrice.innerText = `Tổng tiền: ${totalPrice} đ`  
+            });
+    }
+    function handleToggleCart() {
+        {{#if user}}
+            const user = {{{JSONstringify user}}};
+        {{else}}
+            const user = null;
+        {{/if}}
+        isOpenModalCart = !isOpenModalCart
+        modalCart.style.display = 'block' 
+        
+        if(!isOpenModalCart) {
+            modalCart.style.display = 'none' 
+            return
+        }
+        if(user) {
+            fetch(`/api/cart/${user._id}`, {
+                headers: {
+                    'X-Fetch': 'true'
+                }
+            })
+                .then(res => res.json())
+                .then(cart => {
+                    handleCart(cart, user)
+                })
+            return
+        }
+        const dataCart = localStorage.getItem('Cart')
+        let cart = []
+        if(dataCart) {
+            cart = JSON.parse(dataCart)
+        }
+        handleCart(cart)
+    } 
+
+    buttonOpenCart.addEventListener('click', function(e) {
+        e.stopPropagation()
+        handleToggleCart()
+    })
+
+    buttonCloseCart.addEventListener('click', function(e) {
+        handleToggleCart()
+    })
+    document.addEventListener('click', function(e) {
+        if(!modalCartWrapper.contains(event.target) && isOpenModalCart) {
+            handleToggleCart()
+        }
+    })
+
+    buttonBuyAll.addEventListener('click', function(e) {
+        {{#if user}}
+            const user = {{{JSONstringify user}}};
+        {{else}}
+            const user = null;
+        {{/if}}
+        if(user) {
+            fetch(`/api/cart/${user._id}`, {
+                headers: {
+                    'X-Fetch': 'true',
+                }
+            })
+                .then(res => res.json())
+                .then(cart => {
+                    if(cart.length > 0) {
+                        localStorage.setItem('Order', JSON.stringify(cart))
+                        window.location.pathname = '/payment'
+                    }
+                })
+            return    
+        }
+        const dataCart = localStorage.getItem('Cart')
+        if(dataCart) {
+            localStorage.setItem('Order', dataCart)
+            window.location.pathname = '/payment'
+        }
+    })
+</script>

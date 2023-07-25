@@ -1,0 +1,76 @@
+<header>
+    <div id="header">
+        <a href="/"><img class='logo' src="/images/logo.png"/ alt=""></a>
+        <div class="action">
+            {{#if user}}
+             <div class="user-avatar">
+                <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png?w=740&t=st=1688956974~exp=1688957574~hmac=c312e453ad86308fefba5bc973e6e329e8e4abb72eec21806f55c0ceaa759659" alt="Avatar" class="avatar" draggable="false">
+                <div class="menu-action" >
+                    <ul>
+                        <li>
+                            <a href="/profile">Thông tin tài khoản</a>
+                        </li>
+                        {{#if (equals user.permission "2")}}
+                        <li>
+                            <a href="/admin/product/store">Quản lý sản phẩm </a>
+                        </li>
+                        <li>
+                            <a href="/admin/order/store">Quản lý đơn hàng </a>
+                        </li>
+                        {{/if}}
+                        <li>
+                            <button onclick="handleLogout()">Đăng xuất</button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            {{else}}
+            <button class="button__link--default"><a href="/register">Register</a></button>
+            <button class="button__link--primary"><a href="/login">Login</a></button>
+            {{/if}}
+            <button class="button"> 
+                <i class="icon fa-solid fa-magnifying-glass"></i>
+            </button>
+            <button id="open-cart" class="button"> 
+                <i class="icon fa-regular fa-cart-shopping"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+
+<script>
+    let isOpenMenu = false
+    const header = document.getElementById('header')
+    const userAvatar = header.querySelector('.user-avatar')
+    if(userAvatar) {
+        const menuAction = header.querySelector('.menu-action')
+        userAvatar.addEventListener('click', function(e) {
+            e.stopPropagation()
+            if(menuAction.contains(event.target)) return
+            isOpenMenu = !isOpenMenu
+            handleToggleMenu()
+        })
+        document.addEventListener('click', function(event) {
+            if (!menuAction.contains(event.target) && isOpenMenu) {
+                isOpenMenu = !isOpenMenu;
+                handleToggleMenu();
+            }
+        });
+        
+        const handleToggleMenu = () => {
+            isOpenMenu? menuAction.style.display = 'block' : menuAction.style.display = 'none'
+        }
+        function handleLogout() {
+            fetch('/logout', {method: "POST"})
+                .then(res => {
+                    if(res.status = 'Success') {
+                        window.location.pathname = '/'
+                    }
+                })
+                .catch(e =>{
+                    alert('Đã xảy ra lỗi')
+                })
+        }
+    }    
+</script>

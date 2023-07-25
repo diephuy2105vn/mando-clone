@@ -1,0 +1,160 @@
+<div class="page__payment">
+    <form class="payment__form">
+        <div class="infor">
+            <h2 class="title">Thông tin giao hàng</h2>
+            <div class="wrapper__input">
+                <input name="name" type="text" placeholder="Họ và tên" required>
+            </div>
+            <div class="wrapper__input">
+                <input name="email" type="email" placeholder="Email" required>
+                <input name="phone" type="number" placeholder="Số điện thoại" required>
+            </div>
+            <div class="wrapper__input">
+                <input name="address" type="text" placeholder="Địa chỉ" required>
+            </div>
+        </div>
+         <div class="method">
+            <h2 class="title">Phương thức thanh toán </h2>   
+            <div class="wrapper__input">
+                <input name="paymentMethod" type="radio" value="Thanh toán khi nhận hàng">
+                <label for="paymentMethod"><i class="fa-regular fa-basket-shopping"></i>Thanh toán khi nhận hàng</label>
+            </div>
+            <div class="wrapper__input">
+                <input name="paymentMethod" type="radio" value="Thanh toán bằng tài khoản ngân hàng">
+                <label for="paymentMethod"><i class="fa-solid fa-credit-card"></i>Thanh toán bằng tài khoản ngân hàng</label>
+            </div>
+            <span class="span__error">Vui lòng chọn phương thức thanh toán!</span>
+        </div>
+        <div class="action"><button type="submit" class="button__submit">Đặt Hàng</button>  </div>
+    </form>
+    <div class="payment__cart">
+        <h1 class="title">Giỏ hàng</h1>
+        <div class="content">
+        </div>
+        <div class="cart__footer">
+             <span id="total-price-order">Tổng tiền: </span>
+        </div>
+    </div>
+    <div id="confirm-dialog">
+        <div class="dialog-content">
+            <h2>Thông báo</h2>
+            <p></p>
+            <button id="confirm" class="button-primary">Xác nhận</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const paymentForm = document.querySelector('.payment__form')
+    const paymentCart = document.querySelector('.payment__cart')
+    const paymentCartContent = paymentCart.querySelector('.content')
+    const totalPriceOrder =  paymentCart.querySelector('#total-price-order')
+    const dataOrder = localStorage.getItem('Order')
+    let order;
+    let totalPrice = 0;
+    function createCardInPayment (product, detail) {
+        return `<div class="card">
+                <div class="thumbnail">
+                    <img src="../${product.imagePath[0]}" alt="">
+                </div>
+                <div class="infor">
+                    <h3>${product.name}</h3>
+                    <div class="detail">
+                        <span>${detail.color}/${detail.size}</span>
+                    </div>
+                    <div>
+                        <span class="quantity">
+                            ${detail.quantity}
+                        </span>
+                        <span class="price">
+                            ${product.price}
+                        </span>
+                    </div>
+                </div>
+            </div>`
+    }
+    if(dataOrder) {
+        order = JSON.parse(dataOrder)
+        Promise.all(order.map(detail => {
+            return fetch(`/api/product/${detail.idProduct}`, {
+                headers: {
+                    'X-Fetch': 'true'
+                }
+            })
+                .then(res => res.json())
+                .then(product => ({detail, product}))
+        }
+            ))
+            .then(results => {
+                paymentCartContent.innerHTML = results.map(({detail, product}) => {
+                    totalPrice += detail.quantity * product.price 
+                        return createCardInPayment(product, detail);
+                }).join('');
+                totalPriceOrder.innerText = `Tổng tiền: ${totalPrice} đ`
+            })
+    }
+
+    //When user submit form
+    paymentForm.addEventListener('submit', (e) => {    
+        e.preventDefault()
+        let isCheckedMethod = false
+        const inputs = [...paymentForm.querySelectorAll('input[name]:not([type=radio])')]
+        const methods = [...paymentForm.querySelectorAll('input[type=radio]:checked')]
+        const data = {}
+        inputs.forEach(input => {
+            data[input.name] = input.value
+        })
+        methods.forEach(method => {
+            if(method.checked) {
+                isCheckedMethod = true
+            }
+            data[method.name] = method.value
+            return
+        })
+        if(!isCheckedMethod) {
+            const spanError = paymentForm.querySelector('.span__error')
+            spanError.style.display = 'block'
+            return
+        }
+        const confirmDialog = document.getElementById("confirm-dialog")
+        const spanDialog = confirmDialog.querySelector("p")
+        const buttonDialog = confirmDialog.querySelector("button")
+        data.cart = []
+       
+        order.forEach(detail => {
+            data.cart.push(detail)
+        })
+        data.total = totalPrice
+        fetch('/order/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status == 'Success') {
+                    confirmDialog.style.display = "flex"
+                    spanDialog.innerText = data.element
+                    buttonDialog.onclick = () => {
+                        window.location.pathname = "/"
+                    }
+                }
+                if(data.status == 'Faile' || data.status == 'Error') {
+                    confirmDialog.style.display = "flex"
+                    spanDialog.innerText = data.element
+                    buttonDialog.onclick = () => {
+                        confirmDialog.style.display = "none"
+                    }
+                }
+            })
+            .catch(error => {
+                confirmDialog.style.display = "flex"
+                spanDialog.innerText = data.element
+                buttonDialog.onclick = () => {
+                    confirmDialog.style.display = "none"
+                }
+            }) 
+    })
+</script>

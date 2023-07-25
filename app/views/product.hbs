@@ -1,0 +1,51 @@
+<main class="product__page">
+    {{> sidebar}}
+    <div class="w75">
+        <h1 id="title" class="title"></h1>
+        <div class="list__product">
+        </div>
+    </div>
+</main>
+
+<script>
+    const listProduct = document.querySelector('.list__product')
+    const title = document.querySelector('#title')
+    function createProductCard(product) {
+        let imagesHTML = product.imagePath.slice(0, 2).map(image => `<img src="../${image}" draggable="false">`).join("");
+        return `
+            <div class="product">
+                <a href="/product/${product._id}">
+                    <div class="image">   
+                        ${imagesHTML}
+                    </div>
+                </a>
+                <div class="info">
+                    <a href="/product/${product._id}"><p class="name">${product.name}</p></a>
+                    <span class="price">${product.price} đ</span>
+                </div>
+            </div>
+        `;
+    }
+    
+    const query = window.location.search
+    const searchParams = new URLSearchParams(query);
+    searchParams.get('type')? title.innerText = searchParams.get('type'):title.innerText = "Danh Sách Sản Phẩm"
+
+    fetch(`/api/product${query}`, {
+        headers: {
+            'X-Fetch': 'true'
+        }
+    })
+        .then((res) => {
+            return res.json()
+        })
+        .then(products => {
+            listProduct.innerHTML = products.map(product => {
+               return createProductCard(product)
+            }).join('')
+            
+        })
+        .catch(error => {
+            console.log(error)
+        })
+</script>

@@ -1,0 +1,161 @@
+<main class="homepage">
+    <div class="banners">
+        <img src="/images/banners.png" alt="">
+    </div> 
+    <h1 class="title">DANH MỤC SẢN PHẨM</h1>
+    <div class="slider">
+        <button class="prev-btn"><i class="fa-solid fa-angle-left"></i></button>
+        <button class="next-btn"><i class="fa-solid fa-angle-right"></i></button>
+        <div class="content">
+            <div class="card">
+                <div class="images"><img src="/images/listblazer.png" alt="" draggable="false"></div>
+                <div class="info">
+                    <h2 class="name">Blazer</h2>
+                    <button class="button">Xem Ngay</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="images"><img src="/images/listtshirts.png" alt="" draggable="false"></div>
+                <div class="info">
+                    <h2 class="name">T-Shirt</h2>
+                    <button class="button">Xem Ngay</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="images"><img src="/images/listshirts.png" alt="" draggable="false"></div>
+                <div class="info">
+                    <h2 class="name">Shirt</h2>
+                    <button class="button">Xem Ngay</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="images"><img src="/images/listpolo.png" alt="" draggable="false"></div>
+                <div class="info">
+                    <h2 class="name">Áo Polo</h2>
+                    <button class="button">Xem Ngay</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="images"><img src="/images/listpants.png" alt="" draggable="false"></div>
+                <div class="info">
+                    <h2 class="name">Quần dài</h2>
+                    <button class="button">Xem Ngay</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <h2 class="title">SẢN PHẨM BÁN CHẠY</h2>
+    <div class="list__product">
+    </div>
+</main>
+<script>
+    const slider = document.querySelector('.slider')
+    const sliderContent = slider.querySelector('.content');
+    const prevBtn = slider.querySelector('.prev-btn');
+    const nextBtn = slider.querySelector('.next-btn');
+    const cardWidth = sliderContent.querySelector('.card').offsetWidth
+    const sliderChildrens = [...sliderContent.children]
+
+
+    let isDragging = false, startScollLeft, startX
+    let cardPerView = Math.round(sliderContent.offsetWidth / cardWidth)
+
+    sliderChildrens.slice(-cardPerView).reverse().forEach(card => {
+        sliderContent.insertAdjacentHTML("afterbegin", card.outerHTML)
+    })
+
+    sliderChildrens.slice(0, cardPerView).forEach(card => {
+        sliderContent.insertAdjacentHTML("beforeEnd", card.outerHTML)
+    })
+
+    const handleMouseDown = (e) => {
+        isDragging = true
+        startX = e.pageX
+        startScollLeft = sliderContent.scrollLeft
+        sliderContent.classList.add('dragging')
+    }
+
+    prevBtn.onclick = () => {
+        sliderContent.scrollLeft -= cardWidth
+    }
+
+    nextBtn.onclick = () => {
+        sliderContent.scrollLeft += cardWidth
+    }
+
+    const handleMouseUp = () => {
+        isDragging = false
+        sliderContent.classList.remove('dragging')
+    }
+    const handleMouseMove = (e) => {
+        if(!isDragging) return 
+        sliderContent.scrollLeft = startScollLeft - ( e.pageX- startX);
+    }
+
+    const handleScroll = () => {
+        if(sliderContent.scrollLeft === 0) {
+            sliderContent.classList.add('no-transition')
+            sliderContent.scrollLeft = sliderContent.scrollWidth - (2 * sliderContent.offsetWidth)
+            sliderContent.classList.remove('no-transition')
+        }
+
+        if(Math.ceil(sliderContent.scrollLeft) >= sliderContent.scrollWidth - sliderContent.offsetWidth) {
+            sliderContent.classList.add('no-transition')
+            sliderContent.scrollLeft = sliderContent.offsetWidth
+            sliderContent.classList.remove('no-transition')
+        }
+    }
+
+    const autoScroll = () => {
+        intervalId = setInterval(() => {
+            sliderContent.scrollLeft += cardWidth
+        }, 3000)
+    }
+
+    autoScroll()
+    sliderContent.addEventListener('mousedown', handleMouseDown)
+    sliderContent.addEventListener('mousemove', handleMouseMove)
+    sliderContent.addEventListener('mouseup', handleMouseUp)
+    sliderContent.addEventListener('scroll', handleScroll)
+    slider.addEventListener('mouseenter', () => clearInterval(intervalId))
+    slider.addEventListener('mouseleave', autoScroll)
+
+    const baseUrl = window.location.origin;
+    const listProduct = document.querySelector('.list__product')
+    function createProductCard(product) {
+        const imagesHTML = product.imagePath.slice(0, 2).map(image => `<img src="${image}" draggable="false">`).join("");
+        return `
+            <div class="product">
+                <a href="/product/${product._id}">
+                    <div class="image">   
+                        ${imagesHTML}
+                    </div>
+                </a>
+                <div class="info">
+                    <a href="/product/${product._id}"><p class="name">${product.name}</p></a>
+                    <span class="price">${product.price} đ</span>
+                </div>
+            </div>
+        `;
+    }
+
+    fetch(`${baseUrl}/api/product?sizepage=10`, {
+        headers: {
+            'X-Fetch': 'true'
+        }
+    })
+        .then((res) => {
+            return res.json()
+        })
+        .then(products => {
+            listProduct.innerHTML = products.map(product => {
+               return createProductCard(product)
+            }).join('')
+            
+        })
+        .catch(error => {
+            console.log(error)
+        })
+</script>
+
